@@ -3,9 +3,9 @@ package handler
 import (
 	"net/http"
 
+	"go.uber.org/zap"
 	"reviewservice/internal/domain"
 	"reviewservice/internal/service"
-	"go.uber.org/zap"
 )
 
 // UserHandler обрабатывает HTTP запросы для работы с пользователями

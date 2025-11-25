@@ -10,14 +10,14 @@ import (
 	"syscall"
 	"time"
 
-	"reviewservice/internal/config"
-	"reviewservice/internal/handler"
-	"reviewservice/internal/repository/postgres"
-	"reviewservice/internal/service"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"go.uber.org/zap"
+	"reviewservice/internal/config"
+	"reviewservice/internal/handler"
+	"reviewservice/internal/repository/postgres"
+	"reviewservice/internal/service"
 )
 
 func main() {

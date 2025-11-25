@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"go.uber.org/zap"
 	"reviewservice/internal/domain"
 	"reviewservice/internal/testutil"
-	"go.uber.org/zap"
 )
 
 // TestUserService_SetIsActive_DeactivateReassignsReviewers проверяет,

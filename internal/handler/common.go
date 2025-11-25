@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"reviewservice/internal/domain"
 	"go.uber.org/zap"
+	"reviewservice/internal/domain"
 )
 
 // ErrorResponse представляет структуру ошибки API

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"math/rand"
 
-	"reviewservice/internal/domain"
 	"go.uber.org/zap"
+	"reviewservice/internal/domain"
 )
 
 // PullRequestService реализует бизнес-логику для работы с Pull Request'ами

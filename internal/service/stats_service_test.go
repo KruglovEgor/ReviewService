@@ -6,8 +6,8 @@ import (
 
 	"reviewservice/internal/domain"
 
-	"reviewservice/internal/testutil"
 	"go.uber.org/zap"
+	"reviewservice/internal/testutil"
 )
 
 // TestStatsService_GetStats tests statistics retrieval

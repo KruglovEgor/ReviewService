@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"reviewservice/internal/domain"
 	"github.com/jackc/pgx/v5/pgconn"
+	"reviewservice/internal/domain"
 )
 
 // TeamRepository реализует domain.TeamRepository для PostgreSQL

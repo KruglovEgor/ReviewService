@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 
+	"go.uber.org/zap"
 	"reviewservice/internal/domain"
 	"reviewservice/internal/repository/postgres"
-	"go.uber.org/zap"
 )
 
 // TeamService реализует бизнес-логику для работы с командами

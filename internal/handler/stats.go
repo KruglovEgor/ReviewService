@@ -3,8 +3,8 @@ package handler
 import (
 	"net/http"
 
-	"reviewservice/internal/service"
 	"go.uber.org/zap"
+	"reviewservice/internal/service"
 )
 
 // StatsHandler обрабатывает HTTP запросы для статистики

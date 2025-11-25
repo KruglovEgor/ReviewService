@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"reviewservice/internal/domain"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"reviewservice/internal/domain"
 )
 
 // PullRequestRepository реализует domain.PullRequestRepository для PostgreSQL

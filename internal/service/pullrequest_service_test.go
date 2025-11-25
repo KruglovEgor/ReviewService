@@ -7,8 +7,8 @@ import (
 
 	"reviewservice/internal/domain"
 
-	"reviewservice/internal/testutil"
 	"go.uber.org/zap"
+	"reviewservice/internal/testutil"
 )
 
 // TestPullRequestService_CreatePullRequest tests PR creation scenarios

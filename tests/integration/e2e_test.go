@@ -16,6 +16,7 @@ import (
 	"reviewservice/internal/handler"
 	"reviewservice/internal/repository/postgres"
 	"reviewservice/internal/service"
+
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -181,6 +182,7 @@ func setupTestDB(t *testing.T) (*sql.DB, func()) {
 
 	// Применяем миграции
 	migrationsPath := "file://../../migrations"
+
 	m, err := migrate.New(migrationsPath, dsn)
 	if err != nil {
 		t.Fatalf("failed to create migrate: %v", err)

@@ -16,20 +16,45 @@
 
 ## Быстрый старт
 
-### Запуск через Docker Compose
+### Запуск приложения
 
 ```bash
-docker-compose up -d
+# Клонировать репозиторий
+git clone https://github.com/KruglovEgor/ReviewService.git
+cd ReviewService
+
+# Запустить приложение и БД
+docker-compose up --build -d
+
+# Проверить статус
+docker-compose ps
 ```
 
-Сервис будет доступен на `http://localhost:8080`
+Сервис доступен на `http://localhost:8080`
 
 **Swagger UI:** `http://localhost:8080/swagger/`
+
+### Запуск тестов
+
+**Unit-тесты:**
+```bash
+go test -v ./internal/...
+```
+
+**Integration-тесты:**
+```bash
+docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
+docker-compose -f docker-compose.test.yml down -v
+```
 
 ### Остановка
 
 ```bash
+# Остановить и удалить контейнеры
 docker-compose down
+
+# Остановить и удалить контейнеры + volumes (полная очистка БД)
+docker-compose down -v
 ```
 
 ## Архитектура
@@ -141,8 +166,14 @@ go test -v ./internal/...
 
 **Покрытие кода:**
 ```bash
-go test ./internal/... -coverprofile=coverage.out
-go tool cover -html=coverage.out
+# Запуск с покрытием (только service layer где есть тесты)
+go test ./internal/service/... -coverprofile=coverage.out
+
+# Генерация HTML отчёта
+go tool cover -html=coverage.out -o coverage.html
+
+# Просмотр в консоли
+go tool cover -func=coverage.out
 ```
 
 **Текущее покрытие:**
@@ -152,49 +183,44 @@ go tool cover -html=coverage.out
 
 ### Integration-тесты
 
-**С использованием Docker (рекомендуется):**
+**Через Docker Compose (рекомендуется):**
 ```bash
-# Запускает отдельную тестовую БД и выполняет e2e тесты
+# Запускает изолированную тестовую БД и выполняет E2E тесты
 docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
 
 # Очистка после тестов
 docker-compose -f docker-compose.test.yml down -v
 ```
 
-**Локально (требуется запущенная PostgreSQL):**
-```bash
-# Настройте переменные окружения для тестовой БД
-export TEST_DB_HOST=localhost
-export TEST_DB_NAME=reviewservice_test
-# ... остальные переменные
+Этот метод:
+- ✅ Работает на любой ОС из коробки
+- ✅ Изолированная тестовая БД (не влияет на dev окружение)
+- ✅ Автоматически применяет миграции
+- ✅ Не требует установки PostgreSQL локально
 
-go test -v ./tests/integration/...
-```
+**Что происходит внутри:**
+1. Создаётся контейнер `postgres_test` с чистой БД
+2. Собирается тестовый образ из `Dockerfile.test`
+3. Запускаются тесты из `./tests/integration/...`
+4. После завершения контейнеры останавливаются
 
-## Локальная разработка
+**Результат:** Все тесты должны пройти успешно при первом запуске после клонирования репозитория.
 
-Если нужно запустить без Docker:
+---
 
-```bash
-# 1. Установить зависимости
-go mod download
+## Требования
 
-# 2. Запустить PostgreSQL
-docker run -d --name postgres \
-  -e POSTGRES_USER=reviewservice \
-  -e POSTGRES_PASSWORD=password \
-  -e POSTGRES_DB=reviewservice \
-  -p 5432:5432 \
-  postgres:16-alpine
+**Для запуска приложения:**
+- Docker & Docker Compose
+- Свободные порты: 8080 (API), 5432 (PostgreSQL)
 
-# 3. Настроить окружение
-export DB_HOST=localhost
-export DB_PORT=5432
-# ... остальные переменные
+**Для локальной разработки:**
+- Go 1.23+
+- Docker (для запуска PostgreSQL)
 
-# 4. Запустить приложение
-go run ./cmd/api
-```
+**Важно:** Проект готов к запуску из коробки - `.env` файл не требуется, все defaults настроены в `docker-compose.yml`.
+
+---
 
 ## Принятые решения
 
@@ -204,8 +230,14 @@ go run ./cmd/api
 ### 2. Идемпотентность
 Повторный вызов `POST /pullRequest/merge` для уже слитого PR возвращает 200 OK с текущим состоянием.
 
-### 3. Переназначение
-Новый ревьювер выбирается из **команды заменяемого ревьювера**, а не автора PR. Это позволяет поддерживать кросс-командное ревью.
+### 3. Переназначение при деактивации
+При деактивации пользователя его открытые PR автоматически переназначаются по приоритету:
+1. **Команда деактивируемого** - сначала ищем замену в его команде
+2. **Команда автора PR** - если в первой команде нет активных
+3. **Другие команды** - если и в команде автора нет
+4. **Удаление без замены** - если вообще нет активных пользователей
+
+Это обеспечивает сохранение ревьюверов даже при массовой деактивации команды.
 
 ### 4. Неактивные пользователи
 Пользователи с `is_active = false`:
