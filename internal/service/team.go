@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/KruglovEgor/ReviewService/internal/domain"
-	"github.com/KruglovEgor/ReviewService/internal/repository/postgres"
+	"reviewservice/internal/domain"
+	"reviewservice/internal/repository/postgres"
 	"go.uber.org/zap"
 )
 

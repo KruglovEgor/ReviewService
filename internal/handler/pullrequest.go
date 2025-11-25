@@ -3,8 +3,8 @@ package handler
 import (
 	"net/http"
 
-	"github.com/KruglovEgor/ReviewService/internal/domain"
-	"github.com/KruglovEgor/ReviewService/internal/service"
+	"reviewservice/internal/domain"
+	"reviewservice/internal/service"
 	"go.uber.org/zap"
 )
 

@@ -146,9 +146,9 @@ go tool cover -html=coverage.out
 ```
 
 **Текущее покрытие:**
-- Service layer: 62%
-- Handler layer: 47.5%
-- Всего: 51 тест
+- Service layer: 67.7%
+- Handler layer: 48.8%
+- Всего: 98 тестов
 
 ### Integration-тесты
 

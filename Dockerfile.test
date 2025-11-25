@@ -1,0 +1,18 @@
+# Dockerfile для запуска интеграционных тестов
+FROM golang:1.23-alpine
+
+# Устанавливаем git для go mod
+RUN apk add --no-cache git
+
+WORKDIR /app
+
+# Копируем go.mod и go.sum для кеширования зависимостей
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Копируем весь проект
+COPY . .
+
+# По умолчанию запускаем тесты
+CMD ["go", "test", "-v", "./tests/integration/..."]
+

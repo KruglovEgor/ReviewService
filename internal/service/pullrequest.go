@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/KruglovEgor/ReviewService/internal/domain"
+	"reviewservice/internal/domain"
 	"go.uber.org/zap"
 )
 

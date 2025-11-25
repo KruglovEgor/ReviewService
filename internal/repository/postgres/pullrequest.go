@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/KruglovEgor/ReviewService/internal/domain"
+	"reviewservice/internal/domain"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )

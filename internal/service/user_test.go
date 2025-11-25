@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/KruglovEgor/ReviewService/internal/domain"
-	"github.com/KruglovEgor/ReviewService/internal/testutil"
+	"reviewservice/internal/domain"
+	"reviewservice/internal/testutil"
 	"go.uber.org/zap"
 )
 
@@ -19,7 +19,11 @@ func TestUserService_GetUser(t *testing.T) {
 		},
 	}
 
-	svc := NewUserService(userRepo, logger)
+	prRepo := &testutil.MockPRRepository{
+		PRs: make(map[string]*domain.PullRequest),
+	}
+
+	svc := NewUserService(userRepo, prRepo, logger)
 
 	tests := []struct {
 		name    string

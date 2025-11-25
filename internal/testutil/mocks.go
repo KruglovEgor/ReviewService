@@ -4,7 +4,7 @@ package testutil
 import (
 	"context"
 
-	"github.com/KruglovEgor/ReviewService/internal/domain"
+	"reviewservice/internal/domain"
 )
 
 // MockPRRepository implements domain.PullRequestRepository for testing
@@ -310,6 +310,16 @@ func (m *MockUserRepository) GetByTeam(ctx context.Context, teamName string) ([]
 	users := make([]domain.User, 0)
 	for _, user := range m.Users {
 		if user.TeamName == teamName {
+			users = append(users, *user)
+		}
+	}
+	return users, nil
+}
+
+func (m *MockUserRepository) GetActiveUsersExcludingTeam(ctx context.Context, excludeTeamName string) ([]domain.User, error) {
+	users := make([]domain.User, 0)
+	for _, user := range m.Users {
+		if user.IsActive && user.TeamName != excludeTeamName {
 			users = append(users, *user)
 		}
 	}

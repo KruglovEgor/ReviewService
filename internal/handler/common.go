@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/KruglovEgor/ReviewService/internal/domain"
+	"reviewservice/internal/domain"
 	"go.uber.org/zap"
 )
 

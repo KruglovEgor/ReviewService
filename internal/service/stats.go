@@ -6,7 +6,8 @@ import (
 	"math/rand/v2"
 	"time"
 
-	"github.com/KruglovEgor/ReviewService/internal/domain"
+	"reviewservice/internal/domain"
+
 	"go.uber.org/zap"
 )
 
@@ -175,16 +176,6 @@ func (s *StatsService) BulkDeactivateTeam(ctx context.Context, teamName string) 
 
 		// Для каждого PR пытаемся переназначить
 		for _, prID := range openPRs {
-			// Получаем автора PR чтобы исключить его из кандидатов
-			pr, err := s.prRepo.Get(ctx, prID)
-			if err != nil {
-				s.logger.Error("failed to get PR for reassignment",
-					zap.Error(err),
-					zap.String("pr_id", prID))
-				reassignErrors++
-				continue
-			}
-
 			// Получаем текущих ревьюверов
 			currentReviewers, err := s.prRepo.GetReviewers(ctx, prID)
 			if err != nil {
@@ -195,33 +186,79 @@ func (s *StatsService) BulkDeactivateTeam(ctx context.Context, teamName string) 
 				continue
 			}
 
-			// Ищем кандидата для замены из команды автора
-			author, err := s.userRepo.Get(ctx, pr.AuthorID)
+			// Получаем PR для информации об авторе (чтобы исключить его из кандидатов)
+			pr, err := s.prRepo.Get(ctx, prID)
 			if err != nil {
-				s.logger.Error("failed to get author",
+				s.logger.Error("failed to get PR for reassignment",
 					zap.Error(err),
-					zap.String("author_id", pr.AuthorID))
+					zap.String("pr_id", prID))
 				reassignErrors++
 				continue
 			}
 
-			teamMembers, err := s.userRepo.GetByTeam(ctx, author.TeamName)
+			// Получаем команду деактивируемого пользователя для поиска замены
+			user, err := s.userRepo.Get(ctx, userID)
+			if err != nil {
+				s.logger.Error("failed to get deactivated user",
+					zap.Error(err),
+					zap.String("user_id", userID))
+				reassignErrors++
+				continue
+			}
+
+			teamMembers, err := s.userRepo.GetByTeam(ctx, user.TeamName)
 			if err != nil {
 				s.logger.Error("failed to get team members for reassignment",
 					zap.Error(err),
-					zap.String("team", author.TeamName))
+					zap.String("team", user.TeamName))
 				reassignErrors++
 				continue
 			}
 
-			// Фильтруем кандидатов: активные, не автор, не текущие ревьюверы
-			candidates := filterCandidates(teamMembers, pr.AuthorID, currentReviewers)
+			// Шаг 1: Ищем кандидатов в команде деактивируемого пользователя
+			candidates := filterCandidates(teamMembers, pr.AuthorID, currentReviewers, userID)
+
+			// Шаг 2: Если не нашли, ищем в команде автора PR (если это другая команда)
+			if len(candidates) == 0 {
+				author, err := s.userRepo.Get(ctx, pr.AuthorID)
+				if err != nil {
+					s.logger.Error("failed to get author",
+						zap.Error(err),
+						zap.String("author_id", pr.AuthorID))
+				} else if author.TeamName != user.TeamName {
+					s.logger.Info("no candidates in reviewer team, searching in author team",
+						zap.String("pr_id", prID),
+						zap.String("reviewer_team", user.TeamName),
+						zap.String("author_team", author.TeamName))
+
+					authorTeamMembers, err := s.userRepo.GetByTeam(ctx, author.TeamName)
+					if err != nil {
+						s.logger.Error("failed to get author team members", zap.Error(err))
+					} else {
+						candidates = filterCandidates(authorTeamMembers, pr.AuthorID, currentReviewers, userID)
+					}
+				}
+			}
+
+			// Шаг 3: Если всё ещё не нашли, ищем в других командах
+			if len(candidates) == 0 {
+				s.logger.Info("no candidates in author team, searching in other teams",
+					zap.String("pr_id", prID),
+					zap.String("exclude_team", user.TeamName))
+
+				otherUsers, err := s.userRepo.GetActiveUsersExcludingTeam(ctx, user.TeamName)
+				if err != nil {
+					s.logger.Error("failed to get users from other teams", zap.Error(err))
+				} else {
+					candidates = filterCandidates(otherUsers, pr.AuthorID, currentReviewers, userID)
+				}
+			}
 
 			if len(candidates) == 0 {
 				s.logger.Warn("no candidates for reassignment, removing reviewer without replacement",
 					zap.String("pr_id", prID),
 					zap.String("old_reviewer", userID),
-					zap.String("team", author.TeamName),
+					zap.String("team", user.TeamName),
 					zap.Int("team_members_total", len(teamMembers)))
 
 				// Просто удаляем ревьювера без замены, т.к. нет активных кандидатов
@@ -287,9 +324,10 @@ type BulkDeactivateResult struct {
 }
 
 // filterCandidates фильтрует кандидатов для замены ревьювера
-func filterCandidates(teamMembers []domain.User, authorID string, currentReviewers []string) []string {
+func filterCandidates(teamMembers []domain.User, authorID string, currentReviewers []string, excludeUserID string) []string {
 	excluded := make(map[string]bool)
 	excluded[authorID] = true
+	excluded[excludeUserID] = true
 	for _, reviewerID := range currentReviewers {
 		excluded[reviewerID] = true
 	}

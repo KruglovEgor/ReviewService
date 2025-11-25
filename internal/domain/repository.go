@@ -37,6 +37,9 @@ type UserRepository interface {
 	// GetByTeam получает всех пользователей команды
 	GetByTeam(ctx context.Context, teamName string) ([]User, error)
 
+	// GetActiveUsersExcludingTeam получает всех активных пользователей кроме указанной команды
+	GetActiveUsersExcludingTeam(ctx context.Context, excludeTeamName string) ([]User, error)
+
 	// SetIsActive устанавливает флаг активности пользователя
 	SetIsActive(ctx context.Context, userID string, isActive bool) error
 

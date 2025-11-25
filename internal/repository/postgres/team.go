@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/KruglovEgor/ReviewService/internal/domain"
+	"reviewservice/internal/domain"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 

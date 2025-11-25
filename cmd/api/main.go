@@ -10,10 +10,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/KruglovEgor/ReviewService/internal/config"
-	"github.com/KruglovEgor/ReviewService/internal/handler"
-	"github.com/KruglovEgor/ReviewService/internal/repository/postgres"
-	"github.com/KruglovEgor/ReviewService/internal/service"
+	"reviewservice/internal/config"
+	"reviewservice/internal/handler"
+	"reviewservice/internal/repository/postgres"
+	"reviewservice/internal/service"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -130,7 +130,7 @@ func initApp(db *sql.DB, logger *zap.Logger) *App {
 
 	// Services
 	teamService := service.NewTeamService(teamRepo, userRepo, txManager, logger)
-	userService := service.NewUserService(userRepo, logger)
+	userService := service.NewUserService(userRepo, prRepo, logger)
 	prService := service.NewPullRequestService(prRepo, userRepo, logger)
 	statsService := service.NewStatsService(prRepo, userRepo, logger)
 

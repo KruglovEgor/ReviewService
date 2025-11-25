@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/KruglovEgor/ReviewService/internal/domain"
+	"reviewservice/internal/domain"
 
-	"github.com/KruglovEgor/ReviewService/internal/testutil"
+	"reviewservice/internal/testutil"
 	"go.uber.org/zap"
 )
 

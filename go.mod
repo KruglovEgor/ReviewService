@@ -1,4 +1,4 @@
-module github.com/KruglovEgor/ReviewService
+module reviewservice
 
 go 1.23
 

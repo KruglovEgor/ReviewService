@@ -6,7 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/KruglovEgor/ReviewService/internal/domain"
+	"reviewservice/internal/domain"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -112,6 +113,37 @@ func (r *UserRepository) GetByTeam(ctx context.Context, teamName string) ([]doma
 	rows, err := r.db.QueryContext(ctx, query, teamName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get users by team: %w", err)
+	}
+	defer rows.Close()
+
+	users := make([]domain.User, 0)
+	for rows.Next() {
+		var user domain.User
+		if err := rows.Scan(&user.UserID, &user.Username, &user.TeamName, &user.IsActive); err != nil {
+			return nil, fmt.Errorf("failed to scan user: %w", err)
+		}
+		users = append(users, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating users: %w", err)
+	}
+
+	return users, nil
+}
+
+// GetActiveUsersExcludingTeam получает всех активных пользователей кроме указанной команды
+func (r *UserRepository) GetActiveUsersExcludingTeam(ctx context.Context, excludeTeamName string) ([]domain.User, error) {
+	query := `
+		SELECT user_id, username, team_name, is_active
+		FROM users
+		WHERE is_active = true AND team_name != $1
+		ORDER BY username
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, excludeTeamName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get active users excluding team: %w", err)
 	}
 	defer rows.Close()
 
