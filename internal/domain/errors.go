@@ -6,22 +6,25 @@ import "errors"
 var (
 	// ErrTeamExists - команда с таким именем уже существует
 	ErrTeamExists = errors.New("team already exists")
-	
+
+	// ErrUserExists - пользователь с таким ID уже существует
+	ErrUserExists = errors.New("user already exists")
+
 	// ErrPRExists - PR с таким ID уже существует
 	ErrPRExists = errors.New("pull request already exists")
-	
+
 	// ErrPRMerged - попытка изменить уже смердженный PR
 	ErrPRMerged = errors.New("cannot modify merged pull request")
-	
+
 	// ErrNotAssigned - ревьювер не назначен на этот PR
 	ErrNotAssigned = errors.New("reviewer is not assigned to this PR")
-	
+
 	// ErrNoCandidate - нет доступных кандидатов для назначения
 	ErrNoCandidate = errors.New("no active replacement candidate in team")
-	
+
 	// ErrNotFound - ресурс не найден
 	ErrNotFound = errors.New("resource not found")
-	
+
 	// ErrInvalidInput - некорректные входные данные
 	ErrInvalidInput = errors.New("invalid input data")
 )

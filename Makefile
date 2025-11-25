@@ -1,4 +1,4 @@
-.PHONY: help build run test clean docker-up docker-down migrate-up migrate-down lint
+.PHONY: help build run test test-unit test-integration test-coverage clean docker-up docker-down lint
 
 # Переменные
 APP_NAME=reviewservice
@@ -15,9 +15,24 @@ build: ## Собрать приложение
 run: ## Запустить приложение локально
 	$(GO) run ./cmd/api
 
-test: ## Запустить тесты
-	$(GO) test -v -race -coverprofile=coverage.out ./...
+test: test-unit ## Запустить все unit-тесты
+
+test-unit: ## Запустить unit-тесты
+	@echo "Running unit tests..."
+	$(GO) test -v -race ./tests/unit/...
+
+test-integration: ## Запустить integration-тесты (требует PostgreSQL)
+	@echo "Running integration tests..."
+	$(GO) test -v ./tests/integration/...
+
+test-coverage: ## Запустить тесты с покрытием кода
+	@echo "Running tests with coverage..."
+	$(GO) test -race -coverprofile=coverage.out -covermode=atomic ./...
+	$(GO) tool cover -func=coverage.out
+	@echo "\nHTML report: coverage.html"
 	$(GO) tool cover -html=coverage.out -o coverage.html
+
+test-all: test-unit test-integration ## Запустить все тесты
 
 clean: ## Удалить сгенерированные файлы
 	rm -rf bin/
