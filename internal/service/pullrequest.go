@@ -40,18 +40,18 @@ func (s *PullRequestService) CreatePullRequest(
 		s.logger.Error("failed to check PR existence", zap.Error(err), zap.String("pr_id", prID))
 		return nil, fmt.Errorf("failed to check PR existence: %w", err)
 	}
-	
+
 	if exists {
 		return nil, domain.ErrPRExists
 	}
-	
+
 	// Получаем автора
 	author, err := s.userRepo.Get(ctx, authorID)
 	if err != nil {
 		s.logger.Error("failed to get author", zap.Error(err), zap.String("author_id", authorID))
 		return nil, err
 	}
-	
+
 	// Создаём PR
 	pr := &domain.PullRequest{
 		PullRequestID:     prID,
@@ -60,24 +60,24 @@ func (s *PullRequestService) CreatePullRequest(
 		Status:            domain.PRStatusOpen,
 		AssignedReviewers: []string{},
 	}
-	
+
 	if err := s.prRepo.Create(ctx, pr); err != nil {
 		s.logger.Error("failed to create PR", zap.Error(err), zap.String("pr_id", prID))
 		return nil, err
 	}
-	
+
 	s.logger.Info("PR created", zap.String("pr_id", prID), zap.String("author_id", authorID))
-	
+
 	// Получаем команду автора
 	teamMembers, err := s.userRepo.GetByTeam(ctx, author.TeamName)
 	if err != nil {
 		s.logger.Error("failed to get team members", zap.Error(err), zap.String("team_name", author.TeamName))
 		return nil, fmt.Errorf("failed to get team members: %w", err)
 	}
-	
+
 	// Выбираем до 2 активных ревьюверов (исключаем автора)
 	reviewers := s.selectReviewers(teamMembers, authorID, 2)
-	
+
 	// Назначаем ревьюверов
 	if len(reviewers) > 0 {
 		if err := s.prRepo.AssignReviewers(ctx, prID, reviewers); err != nil {
@@ -89,7 +89,7 @@ func (s *PullRequestService) CreatePullRequest(
 	} else {
 		s.logger.Warn("no reviewers available", zap.String("pr_id", prID), zap.String("team_name", author.TeamName))
 	}
-	
+
 	return pr, nil
 }
 
@@ -100,9 +100,9 @@ func (s *PullRequestService) MergePullRequest(ctx context.Context, prID string) 
 		s.logger.Error("failed to merge PR", zap.Error(err), zap.String("pr_id", prID))
 		return nil, err
 	}
-	
+
 	s.logger.Info("PR merged", zap.String("pr_id", prID))
-	
+
 	return pr, nil
 }
 
@@ -117,12 +117,12 @@ func (s *PullRequestService) ReassignReviewer(
 		s.logger.Error("failed to get PR", zap.Error(err), zap.String("pr_id", prID))
 		return nil, "", err
 	}
-	
+
 	// Проверяем, что PR не смерджен
 	if pr.Status == domain.PRStatusMerged {
 		return nil, "", domain.ErrPRMerged
 	}
-	
+
 	// Проверяем, что старый ревьювер назначен
 	isAssigned := false
 	for _, reviewerID := range pr.AssignedReviewers {
@@ -131,32 +131,32 @@ func (s *PullRequestService) ReassignReviewer(
 			break
 		}
 	}
-	
+
 	if !isAssigned {
 		return nil, "", domain.ErrNotAssigned
 	}
-	
+
 	// Получаем старого ревьювера
 	oldReviewer, err := s.userRepo.Get(ctx, oldReviewerID)
 	if err != nil {
 		s.logger.Error("failed to get old reviewer", zap.Error(err), zap.String("reviewer_id", oldReviewerID))
 		return nil, "", err
 	}
-	
+
 	// Получаем команду старого ревьювера
 	teamMembers, err := s.userRepo.GetByTeam(ctx, oldReviewer.TeamName)
 	if err != nil {
 		s.logger.Error("failed to get team members", zap.Error(err), zap.String("team_name", oldReviewer.TeamName))
 		return nil, "", fmt.Errorf("failed to get team members: %w", err)
 	}
-	
+
 	// Исключаем автора и текущих ревьюверов
 	excludedIDs := make(map[string]bool)
 	excludedIDs[pr.AuthorID] = true
 	for _, reviewerID := range pr.AssignedReviewers {
 		excludedIDs[reviewerID] = true
 	}
-	
+
 	// Выбираем нового ревьювера
 	candidates := make([]string, 0)
 	for _, member := range teamMembers {
@@ -164,29 +164,29 @@ func (s *PullRequestService) ReassignReviewer(
 			candidates = append(candidates, member.UserID)
 		}
 	}
-	
+
 	if len(candidates) == 0 {
 		return nil, "", domain.ErrNoCandidate
 	}
-	
+
 	// Случайно выбираем нового ревьювера
 	newReviewerID := candidates[rand.Intn(len(candidates))]
-	
+
 	// Переназначаем ревьювера
 	if err := s.prRepo.ReassignReviewer(ctx, prID, oldReviewerID, newReviewerID); err != nil {
-		s.logger.Error("failed to reassign reviewer", 
-			zap.Error(err), 
+		s.logger.Error("failed to reassign reviewer",
+			zap.Error(err),
 			zap.String("pr_id", prID),
 			zap.String("old_reviewer", oldReviewerID),
 			zap.String("new_reviewer", newReviewerID))
 		return nil, "", err
 	}
-	
-	s.logger.Info("reviewer reassigned", 
+
+	s.logger.Info("reviewer reassigned",
 		zap.String("pr_id", prID),
 		zap.String("old_reviewer", oldReviewerID),
 		zap.String("new_reviewer", newReviewerID))
-	
+
 	// Обновляем список ревьюверов в PR
 	for i, id := range pr.AssignedReviewers {
 		if id == oldReviewerID {
@@ -194,7 +194,7 @@ func (s *PullRequestService) ReassignReviewer(
 			break
 		}
 	}
-	
+
 	return pr, newReviewerID, nil
 }
 
@@ -214,18 +214,34 @@ func (s *PullRequestService) GetUserReviews(ctx context.Context, userID string) 
 		s.logger.Error("failed to get user", zap.Error(err), zap.String("user_id", userID))
 		return nil, err
 	}
-	
+
 	// Получаем PR'ы пользователя
 	prs, err := s.prRepo.GetByReviewer(ctx, userID)
 	if err != nil {
 		s.logger.Error("failed to get user reviews", zap.Error(err), zap.String("user_id", userID))
 		return nil, fmt.Errorf("failed to get user reviews: %w", err)
 	}
-	
+
 	return &domain.UserPullRequests{
 		UserID:       userID,
 		PullRequests: prs,
 	}, nil
+}
+
+// ListPullRequests возвращает список всех PR с фильтрацией
+func (s *PullRequestService) ListPullRequests(ctx context.Context, status string) ([]*domain.PullRequest, error) {
+	s.logger.Info("listing pull requests", zap.String("status", status))
+
+	prs, err := s.prRepo.List(ctx, status)
+	if err != nil {
+		return nil, err
+	}
+
+	s.logger.Info("pull requests listed",
+		zap.Int("count", len(prs)),
+		zap.String("status", status))
+
+	return prs, nil
 }
 
 // selectReviewers выбирает до maxCount активных ревьюверов из команды (исключая автора)
@@ -237,17 +253,17 @@ func (s *PullRequestService) selectReviewers(teamMembers []domain.User, authorID
 			candidates = append(candidates, member.UserID)
 		}
 	}
-	
+
 	// Если кандидатов меньше или равно maxCount, возвращаем всех
 	if len(candidates) <= maxCount {
 		return candidates
 	}
-	
+
 	// Случайно выбираем maxCount ревьюверов
 	// Используем алгоритм Fisher-Yates для перемешивания
 	rand.Shuffle(len(candidates), func(i, j int) {
 		candidates[i], candidates[j] = candidates[j], candidates[i]
 	})
-	
+
 	return candidates[:maxCount]
 }

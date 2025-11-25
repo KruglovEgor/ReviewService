@@ -7,6 +7,7 @@ tags:
   - name: Teams
   - name: Users
   - name: PullRequests
+  - name: Statistics
   - name: Health
 
 components:
@@ -344,7 +345,7 @@ paths:
                 old_user_id: { type: string }
             example:
               pull_request_id: pr-1001
-              old_reviewer_id: u2
+              old_user_id: u2
       responses:
         '200':
           description: Переназначение выполнено
@@ -391,6 +392,47 @@ paths:
                   value:
                     error: { code: NO_CANDIDATE, message: no active replacement candidate in team }
 
+  /pullRequest/list:
+    get:
+      tags: [PullRequests]
+      summary: Получить список всех PR с фильтрацией
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [OPEN, MERGED]
+          description: Фильтр по статусу (опционально, если не указан - все PR)
+      responses:
+        '200':
+          description: Список PR
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [pull_requests, total]
+                properties:
+                  pull_requests:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PullRequest'
+                  total:
+                    type: integer
+              example:
+                pull_requests:
+                  - pull_request_id: pr-1001
+                    pull_request_name: Add search
+                    author_id: u1
+                    status: OPEN
+                    assigned_reviewers: [u2]
+                  - pull_request_id: pr-1002
+                    pull_request_name: Fix bug
+                    author_id: u2
+                    status: MERGED
+                    assigned_reviewers: []
+                total: 2
+
   /users/getReview:
     get:
       tags: [Users]
@@ -419,3 +461,119 @@ paths:
                     pull_request_name: Add search
                     author_id: u1
                     status: OPEN
+
+  /stats:
+    get:
+      tags: [Statistics]
+      summary: Получить статистику по PR и назначениям ревьюеров
+      responses:
+        '200':
+          description: Статистика сервиса
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [pr_stats, user_stats]
+                properties:
+                  pr_stats:
+                    type: object
+                    properties:
+                      total_prs:
+                        type: integer
+                      open_prs:
+                        type: integer
+                      merged_prs:
+                        type: integer
+                      avg_reviewers_per_pr:
+                        type: number
+                        format: float
+                  user_stats:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      properties:
+                        user_id:
+                          type: string
+                        username:
+                          type: string
+                        total_assignments:
+                          type: integer
+                        open_prs:
+                          type: integer
+                        merged_prs:
+                          type: integer
+              example:
+                pr_stats:
+                  total_prs: 42
+                  open_prs: 15
+                  merged_prs: 27
+                  avg_reviewers_per_pr: 1.8
+                user_stats:
+                  u1:
+                    user_id: u1
+                    username: Alice
+                    total_assignments: 25
+                    open_prs: 8
+                    merged_prs: 17
+                  u2:
+                    user_id: u2
+                    username: Bob
+                    total_assignments: 18
+                    open_prs: 7
+                    merged_prs: 11
+
+  /team/deactivate:
+    post:
+      tags: [Teams]
+      summary: Массово деактивировать команду и переназначить их открытые PR
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [team_name]
+              properties:
+                team_name:
+                  type: string
+            example:
+              team_name: backend
+      responses:
+        '200':
+          description: Команда деактивирована
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deactivated_users, reassigned_prs]
+                properties:
+                  deactivated_users:
+                    type: array
+                    items:
+                      type: string
+                  reassigned_prs:
+                    type: integer
+                  errors:
+                    type: integer
+              example:
+                deactivated_users: ["u1", "u2", "u3"]
+                reassigned_prs: 5
+                errors: 0
+        '404':
+          description: Команда не найдена
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /health:
+    get:
+      tags: [Health]
+      summary: Проверка работоспособности сервиса
+      responses:
+        '200':
+          description: Сервис работает
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: OK

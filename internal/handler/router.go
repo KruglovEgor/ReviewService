@@ -21,6 +21,7 @@ func Router(
 	teamHandler *TeamHandler,
 	userHandler *UserHandler,
 	prHandler *PullRequestHandler,
+	statsHandler *StatsHandler,
 	logger *zap.Logger,
 ) http.Handler {
 	r := chi.NewRouter()
@@ -44,9 +45,12 @@ func Router(
 	// Swagger UI
 	r.Get("/swagger/*", httpSwagger.Handler(
 		httpSwagger.URL("/openapi.yml"),
-	)) // Team endpoints
+	))
+
+	// Team endpoints
 	r.Post("/team/add", teamHandler.CreateTeam)
 	r.Get("/team/get", teamHandler.GetTeam)
+	r.Post("/team/deactivate", teamHandler.BulkDeactivateTeam)
 
 	// User endpoints
 	r.Post("/users/setIsActive", userHandler.SetIsActive)
@@ -56,6 +60,10 @@ func Router(
 	r.Post("/pullRequest/create", prHandler.CreatePullRequest)
 	r.Post("/pullRequest/merge", prHandler.MergePullRequest)
 	r.Post("/pullRequest/reassign", prHandler.ReassignReviewer)
+	r.Get("/pullRequest/list", prHandler.ListPullRequests)
+
+	// Stats endpoints
+	r.Get("/stats", statsHandler.GetStats)
 
 	return r
 }
