@@ -120,13 +120,16 @@ type App struct {
 
 // initApp инициализирует приложение
 func initApp(db *sql.DB, logger *zap.Logger) *App {
+	// Transaction Manager
+	txManager := postgres.NewTxManager(db)
+
 	// Repositories
 	teamRepo := postgres.NewTeamRepository(db)
 	userRepo := postgres.NewUserRepository(db)
 	prRepo := postgres.NewPullRequestRepository(db)
 
 	// Services
-	teamService := service.NewTeamService(teamRepo, userRepo, logger)
+	teamService := service.NewTeamService(teamRepo, userRepo, txManager, logger)
 	userService := service.NewUserService(userRepo, logger)
 	prService := service.NewPullRequestService(prRepo, userRepo, logger)
 	statsService := service.NewStatsService(prRepo, userRepo, logger)

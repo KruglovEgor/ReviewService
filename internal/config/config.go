@@ -11,10 +11,10 @@ import (
 type Config struct {
 	// Server конфигурация HTTP сервера
 	Server ServerConfig
-	
+
 	// Database конфигурация PostgreSQL
 	Database DatabaseConfig
-	
+
 	// App конфигурация приложения
 	App AppConfig
 }
@@ -64,10 +64,10 @@ func (d DatabaseConfig) DSN() string {
 // Load загружает конфигурацию из переменных окружения
 func Load() (*Config, error) {
 	cfg := &Config{}
-	
+
 	if err := envconfig.Process("", cfg); err != nil {
 		return nil, fmt.Errorf("failed to process config: %w", err)
 	}
-	
+
 	return cfg, nil
 }

@@ -96,8 +96,14 @@ func (s *StatsService) GetStats(ctx context.Context) (*GlobalStats, error) {
 }
 
 // BulkDeactivateTeam массово деактивирует пользователей команды
-// и переназначает их открытые PR на активных членов команды
-// Оптимизировано для выполнения <100мс на средних объёмах
+// и переназначает их открытые PR на активных членов команды.
+//
+// Деактивация пользователей выполняется атомарно одним запросом.
+// Переназначение PR происходит последовательно (best-effort) - если часть
+// переназначений не удалась, операция продолжается, а ошибки возвращаются
+// в результате для анализа.
+//
+// Оптимизировано для выполнения <100мс на средних объёмах.
 func (s *StatsService) BulkDeactivateTeam(ctx context.Context, teamName string) (*BulkDeactivateResult, error) {
 	start := time.Now()
 	s.logger.Info("bulk deactivating team members", zap.String("team_name", teamName))

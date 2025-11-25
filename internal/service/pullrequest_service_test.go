@@ -1,12 +1,13 @@
-package service_test
+package service
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/KruglovEgor/ReviewService/internal/domain"
-	"github.com/KruglovEgor/ReviewService/internal/service"
-	"github.com/KruglovEgor/ReviewService/tests/testutil"
+
+	"github.com/KruglovEgor/ReviewService/internal/testutil"
 	"go.uber.org/zap"
 )
 
@@ -117,7 +118,7 @@ func TestPullRequestService_CreatePullRequest(t *testing.T) {
 			tt.setupMocks(prRepo, userRepo)
 
 			logger := zap.NewNop()
-			svc := service.NewPullRequestService(prRepo, userRepo, logger)
+			svc := NewPullRequestService(prRepo, userRepo, logger)
 
 			// Act
 			pr, err := svc.CreatePullRequest(context.Background(), tt.prID, tt.prName, tt.authorID)
@@ -187,7 +188,7 @@ func TestPullRequestService_MergePullRequest(t *testing.T) {
 			tt.setupMocks(prRepo)
 
 			logger := zap.NewNop()
-			svc := service.NewPullRequestService(prRepo, userRepo, logger)
+			svc := NewPullRequestService(prRepo, userRepo, logger)
 
 			// Act
 			pr, err := svc.MergePullRequest(context.Background(), tt.prID)
@@ -324,7 +325,7 @@ func TestPullRequestService_ReassignReviewer(t *testing.T) {
 			tt.setupMocks(prRepo, userRepo)
 
 			logger := zap.NewNop()
-			svc := service.NewPullRequestService(prRepo, userRepo, logger)
+			svc := NewPullRequestService(prRepo, userRepo, logger)
 
 			// Act
 			pr, replacedBy, err := svc.ReassignReviewer(context.Background(), tt.prID, tt.oldUserID)
@@ -392,7 +393,7 @@ func TestPullRequestService_ListPullRequests(t *testing.T) {
 			tt.setupMocks(prRepo)
 
 			logger := zap.NewNop()
-			svc := service.NewPullRequestService(prRepo, userRepo, logger)
+			svc := NewPullRequestService(prRepo, userRepo, logger)
 
 			// Act
 			prs, err := svc.ListPullRequests(context.Background(), tt.status)
@@ -400,6 +401,90 @@ func TestPullRequestService_ListPullRequests(t *testing.T) {
 			// Assert
 			testutil.AssertNoError(t, err)
 			testutil.AssertLen(t, prs, tt.wantCount, "Number of PRs returned")
+		})
+	}
+}
+
+// TestPullRequestService_GetUserReviews tests getting user's assigned PRs
+func TestPullRequestService_GetUserReviews(t *testing.T) {
+	tests := []struct {
+		name       string
+		userID     string
+		setupMocks func(*testutil.MockPRRepository, *testutil.MockUserRepository)
+		wantErr    error
+		wantCount  int
+	}{
+		{
+			name:   "returns PRs for existing user",
+			userID: "u1",
+			setupMocks: func(prRepo *testutil.MockPRRepository, userRepo *testutil.MockUserRepository) {
+				userRepo.Users["u1"] = &domain.User{UserID: "u1", Username: "Alice", IsActive: true}
+				prRepo.GetByReviewerFunc = func(ctx context.Context, userID string) ([]domain.PullRequestShort, error) {
+					return []domain.PullRequestShort{
+						{PullRequestID: "pr-1", PullRequestName: "Feature 1"},
+						{PullRequestID: "pr-2", PullRequestName: "Feature 2"},
+					}, nil
+				}
+			},
+			wantErr:   nil,
+			wantCount: 2,
+		},
+		{
+			name:   "returns empty list for user not found",
+			userID: "nonexistent",
+			setupMocks: func(prRepo *testutil.MockPRRepository, userRepo *testutil.MockUserRepository) {
+				// No user exists
+			},
+			wantErr:   nil,
+			wantCount: 0,
+		},
+		{
+			name:   "returns empty list when user has no assigned PRs",
+			userID: "u1",
+			setupMocks: func(prRepo *testutil.MockPRRepository, userRepo *testutil.MockUserRepository) {
+				userRepo.Users["u1"] = &domain.User{UserID: "u1", Username: "Alice", IsActive: true}
+				prRepo.GetByReviewerFunc = func(ctx context.Context, userID string) ([]domain.PullRequestShort, error) {
+					return []domain.PullRequestShort{}, nil
+				}
+			},
+			wantErr:   nil,
+			wantCount: 0,
+		},
+		{
+			name:   "returns error when PR repository fails",
+			userID: "u1",
+			setupMocks: func(prRepo *testutil.MockPRRepository, userRepo *testutil.MockUserRepository) {
+				userRepo.Users["u1"] = &domain.User{UserID: "u1", Username: "Alice", IsActive: true}
+				prRepo.GetByReviewerFunc = func(ctx context.Context, userID string) ([]domain.PullRequestShort, error) {
+					return nil, fmt.Errorf("database error")
+				}
+			},
+			wantErr: domain.ErrNotFound, // Just to indicate we expect an error
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Arrange
+			prRepo := testutil.NewMockPRRepository()
+			userRepo := testutil.NewMockUserRepository()
+			tt.setupMocks(prRepo, userRepo)
+
+			logger := zap.NewNop()
+			svc := NewPullRequestService(prRepo, userRepo, logger)
+
+			// Act
+			result, err := svc.GetUserReviews(context.Background(), tt.userID)
+
+			// Assert
+			if tt.wantErr != nil {
+				testutil.AssertTrue(t, err != nil, "Should return error")
+			} else {
+				testutil.AssertNoError(t, err)
+				testutil.AssertNotNil(t, result, "Result should not be nil")
+				testutil.AssertEqual(t, result.UserID, tt.userID, "User ID")
+				testutil.AssertLen(t, result.PullRequests, tt.wantCount, "Number of PRs")
+			}
 		})
 	}
 }

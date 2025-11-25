@@ -32,17 +32,17 @@ func (s *UserService) SetIsActive(ctx context.Context, userID string, isActive b
 		s.logger.Error("failed to get user", zap.Error(err), zap.String("user_id", userID))
 		return nil, err
 	}
-	
+
 	// Обновляем статус
 	if err := s.userRepo.SetIsActive(ctx, userID, isActive); err != nil {
 		s.logger.Error("failed to set user active status", zap.Error(err), zap.String("user_id", userID), zap.Bool("is_active", isActive))
 		return nil, err
 	}
-	
+
 	user.IsActive = isActive
-	
+
 	s.logger.Info("user active status updated", zap.String("user_id", userID), zap.Bool("is_active", isActive))
-	
+
 	return user, nil
 }
 

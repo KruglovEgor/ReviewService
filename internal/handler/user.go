@@ -34,28 +34,28 @@ func (h *UserHandler) SetIsActive(w http.ResponseWriter, r *http.Request) {
 		UserID   string `json:"user_id"`
 		IsActive bool   `json:"is_active"`
 	}
-	
+
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, h.logger, http.StatusBadRequest, domain.ErrInvalidInput, domain.CodeNotFound)
 		return
 	}
-	
+
 	// Валидация
 	if req.UserID == "" {
 		writeError(w, h.logger, http.StatusBadRequest, domain.ErrInvalidInput, domain.CodeNotFound)
 		return
 	}
-	
+
 	user, err := h.userService.SetIsActive(r.Context(), req.UserID, req.IsActive)
 	if err != nil {
 		handleDomainError(w, h.logger, err)
 		return
 	}
-	
+
 	response := map[string]interface{}{
 		"user": user,
 	}
-	
+
 	writeJSON(w, http.StatusOK, response)
 }
 
@@ -66,12 +66,12 @@ func (h *UserHandler) GetReview(w http.ResponseWriter, r *http.Request) {
 		writeError(w, h.logger, http.StatusBadRequest, domain.ErrInvalidInput, domain.CodeNotFound)
 		return
 	}
-	
+
 	reviews, err := h.prService.GetUserReviews(r.Context(), userID)
 	if err != nil {
 		handleDomainError(w, h.logger, err)
 		return
 	}
-	
+
 	writeJSON(w, http.StatusOK, reviews)
 }

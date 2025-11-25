@@ -61,7 +61,8 @@ func handleDomainError(w http.ResponseWriter, logger *zap.Logger, err error) {
 	case domain.CodeNotFound:
 		writeError(w, logger, http.StatusNotFound, err, code)
 	default:
-		writeError(w, logger, http.StatusInternalServerError, err, domain.CodeNotFound)
+		// Для неизвестных ошибок возвращаем 500 Internal Server Error
+		writeError(w, logger, http.StatusInternalServerError, err, code)
 	}
 }
 

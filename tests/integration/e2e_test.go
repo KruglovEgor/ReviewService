@@ -219,13 +219,16 @@ func setupTestServer(db *sql.DB, t *testing.T) http.Handler {
 
 	logger, _ := zap.NewDevelopment()
 
+	// Transaction Manager
+	txManager := postgres.NewTxManager(db)
+
 	// Repositories
 	teamRepo := postgres.NewTeamRepository(db)
 	userRepo := postgres.NewUserRepository(db)
 	prRepo := postgres.NewPullRequestRepository(db)
 
 	// Services
-	teamService := service.NewTeamService(teamRepo, userRepo, logger)
+	teamService := service.NewTeamService(teamRepo, userRepo, txManager, logger)
 	userService := service.NewUserService(userRepo, logger)
 	prService := service.NewPullRequestService(prRepo, userRepo, logger)
 	statsService := service.NewStatsService(prRepo, userRepo, logger)

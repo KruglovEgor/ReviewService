@@ -10,6 +10,11 @@ const (
 	PRStatusMerged PRStatus = "MERGED"
 )
 
+// IsValid проверяет валидность статуса PR
+func (s PRStatus) IsValid() bool {
+	return s == PRStatusOpen || s == PRStatusMerged
+}
+
 // User представляет пользователя системы
 type User struct {
 	UserID   string `json:"user_id"`
@@ -33,13 +38,13 @@ type Team struct {
 
 // PullRequest представляет Pull Request с полной информацией
 type PullRequest struct {
-	PullRequestID   string    `json:"pull_request_id"`
-	PullRequestName string    `json:"pull_request_name"`
-	AuthorID        string    `json:"author_id"`
-	Status          PRStatus  `json:"status"`
-	AssignedReviewers []string `json:"assigned_reviewers"`
-	CreatedAt       *time.Time `json:"createdAt,omitempty"`
-	MergedAt        *time.Time `json:"mergedAt,omitempty"`
+	PullRequestID     string     `json:"pull_request_id"`
+	PullRequestName   string     `json:"pull_request_name"`
+	AuthorID          string     `json:"author_id"`
+	Status            PRStatus   `json:"status"`
+	AssignedReviewers []string   `json:"assigned_reviewers"`
+	CreatedAt         *time.Time `json:"createdAt,omitempty"`
+	MergedAt          *time.Time `json:"mergedAt,omitempty"`
 }
 
 // PullRequestShort представляет краткую информацию о PR

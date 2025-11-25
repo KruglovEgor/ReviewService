@@ -33,12 +33,13 @@ var (
 type ErrorCode string
 
 const (
-	CodeTeamExists  ErrorCode = "TEAM_EXISTS"
-	CodePRExists    ErrorCode = "PR_EXISTS"
-	CodePRMerged    ErrorCode = "PR_MERGED"
-	CodeNotAssigned ErrorCode = "NOT_ASSIGNED"
-	CodeNoCandidate ErrorCode = "NO_CANDIDATE"
-	CodeNotFound    ErrorCode = "NOT_FOUND"
+	CodeTeamExists    ErrorCode = "TEAM_EXISTS"
+	CodePRExists      ErrorCode = "PR_EXISTS"
+	CodePRMerged      ErrorCode = "PR_MERGED"
+	CodeNotAssigned   ErrorCode = "NOT_ASSIGNED"
+	CodeNoCandidate   ErrorCode = "NO_CANDIDATE"
+	CodeNotFound      ErrorCode = "NOT_FOUND"
+	CodeInternalError ErrorCode = "INTERNAL_ERROR"
 )
 
 // MapErrorToCode преобразует доменную ошибку в код API
@@ -57,6 +58,6 @@ func MapErrorToCode(err error) ErrorCode {
 	case errors.Is(err, ErrNotFound):
 		return CodeNotFound
 	default:
-		return CodeNotFound
+		return CodeInternalError
 	}
 }

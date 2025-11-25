@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 
@@ -205,7 +206,7 @@ func (s *PullRequestService) GetUserReviews(ctx context.Context, userID string) 
 	if err != nil {
 		// Если пользователь не найден, всё равно возвращаем пустой список
 		// (согласно спецификации, эндпоинт не должен возвращать 404)
-		if err == domain.ErrNotFound {
+		if errors.Is(err, domain.ErrNotFound) {
 			return &domain.UserPullRequests{
 				UserID:       userID,
 				PullRequests: []domain.PullRequestShort{},

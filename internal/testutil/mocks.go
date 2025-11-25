@@ -18,6 +18,8 @@ type MockPRRepository struct {
 	ReassignReviewerFunc       func(ctx context.Context, prID, oldID, newID string) error
 	GetPRStatsFunc             func(ctx context.Context) (map[string]int, error)
 	GetUserAssignmentStatsFunc func(ctx context.Context) (map[string]*domain.UserAssignmentStats, error)
+	GetByReviewerFunc          func(ctx context.Context, userID string) ([]domain.PullRequestShort, error)
+	ListFunc                   func(ctx context.Context, status string) ([]*domain.PullRequest, error)
 }
 
 // NewMockPRRepository creates a new mock PR repository
@@ -84,6 +86,9 @@ func (m *MockPRRepository) AssignReviewers(ctx context.Context, prID string, rev
 }
 
 func (m *MockPRRepository) GetByReviewer(ctx context.Context, userID string) ([]domain.PullRequestShort, error) {
+	if m.GetByReviewerFunc != nil {
+		return m.GetByReviewerFunc(ctx, userID)
+	}
 	var result []domain.PullRequestShort
 	for _, pr := range m.PRs {
 		for _, reviewer := range pr.AssignedReviewers {
@@ -238,6 +243,9 @@ func (m *MockPRRepository) GetUserAssignmentStats(ctx context.Context) (map[stri
 }
 
 func (m *MockPRRepository) List(ctx context.Context, status string) ([]*domain.PullRequest, error) {
+	if m.ListFunc != nil {
+		return m.ListFunc(ctx, status)
+	}
 	result := make([]*domain.PullRequest, 0, len(m.PRs))
 
 	for _, pr := range m.PRs {

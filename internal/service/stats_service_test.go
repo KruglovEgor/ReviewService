@@ -1,12 +1,12 @@
-package service_test
+package service
 
 import (
 	"context"
 	"testing"
 
 	"github.com/KruglovEgor/ReviewService/internal/domain"
-	"github.com/KruglovEgor/ReviewService/internal/service"
-	"github.com/KruglovEgor/ReviewService/tests/testutil"
+
+	"github.com/KruglovEgor/ReviewService/internal/testutil"
 	"go.uber.org/zap"
 )
 
@@ -15,7 +15,7 @@ func TestStatsService_GetStats(t *testing.T) {
 	tests := []struct {
 		name       string
 		setupMocks func(*testutil.MockPRRepository, *testutil.MockUserRepository)
-		validate   func(*testing.T, *service.GlobalStats)
+		validate   func(*testing.T, *GlobalStats)
 	}{
 		{
 			name: "calculates correct PR statistics",
@@ -39,7 +39,7 @@ func TestStatsService_GetStats(t *testing.T) {
 				userRepo.Users["u2"] = &domain.User{UserID: "u2", Username: "Bob"}
 				userRepo.Users["u3"] = &domain.User{UserID: "u3", Username: "Charlie"}
 			},
-			validate: func(t *testing.T, stats *service.GlobalStats) {
+			validate: func(t *testing.T, stats *GlobalStats) {
 				testutil.AssertEqual(t, stats.PRStats.TotalPRs, 3, "Total PRs")
 				testutil.AssertEqual(t, stats.PRStats.OpenPRs, 2, "Open PRs")
 				testutil.AssertEqual(t, stats.PRStats.MergedPRs, 1, "Merged PRs")
@@ -74,7 +74,7 @@ func TestStatsService_GetStats(t *testing.T) {
 			setupMocks: func(prRepo *testutil.MockPRRepository, userRepo *testutil.MockUserRepository) {
 				// No PRs
 			},
-			validate: func(t *testing.T, stats *service.GlobalStats) {
+			validate: func(t *testing.T, stats *GlobalStats) {
 				testutil.AssertEqual(t, stats.PRStats.TotalPRs, 0, "Total PRs")
 				testutil.AssertEqual(t, stats.PRStats.OpenPRs, 0, "Open PRs")
 				testutil.AssertEqual(t, stats.PRStats.MergedPRs, 0, "Merged PRs")
@@ -92,7 +92,7 @@ func TestStatsService_GetStats(t *testing.T) {
 			tt.setupMocks(prRepo, userRepo)
 
 			logger := zap.NewNop()
-			svc := service.NewStatsService(prRepo, userRepo, logger)
+			svc := NewStatsService(prRepo, userRepo, logger)
 
 			// Act
 			stats, err := svc.GetStats(context.Background())
@@ -114,7 +114,7 @@ func TestStatsService_BulkDeactivateTeam(t *testing.T) {
 		name       string
 		teamName   string
 		setupMocks func(*testutil.MockPRRepository, *testutil.MockUserRepository)
-		validate   func(*testing.T, *service.BulkDeactivateResult)
+		validate   func(*testing.T, *BulkDeactivateResult)
 		wantErr    error
 	}{
 		{
@@ -153,7 +153,7 @@ func TestStatsService_BulkDeactivateTeam(t *testing.T) {
 					AssignedReviewers: []string{"u1"},
 				}
 			},
-			validate: func(t *testing.T, result *service.BulkDeactivateResult) {
+			validate: func(t *testing.T, result *BulkDeactivateResult) {
 				testutil.AssertLen(t, result.DeactivatedUsers, 2, "Deactivated users")
 				testutil.AssertContains(t, result.DeactivatedUsers, "u1", "u1 should be deactivated")
 				testutil.AssertContains(t, result.DeactivatedUsers, "u2", "u2 should be deactivated")
@@ -183,7 +183,7 @@ func TestStatsService_BulkDeactivateTeam(t *testing.T) {
 					UserID: "u2", TeamName: "inactive-team", IsActive: false,
 				}
 			},
-			validate: func(t *testing.T, result *service.BulkDeactivateResult) {
+			validate: func(t *testing.T, result *BulkDeactivateResult) {
 				testutil.AssertLen(t, result.DeactivatedUsers, 0, "No users should be deactivated")
 				testutil.AssertEqual(t, result.ReassignedPRs, 0, "No PRs should be reassigned")
 			},
@@ -209,7 +209,7 @@ func TestStatsService_BulkDeactivateTeam(t *testing.T) {
 					AssignedReviewers: []string{"u2"},
 				}
 			},
-			validate: func(t *testing.T, result *service.BulkDeactivateResult) {
+			validate: func(t *testing.T, result *BulkDeactivateResult) {
 				testutil.AssertLen(t, result.DeactivatedUsers, 2, "Both users should be deactivated")
 				// When no candidates, reviewers are removed without replacement
 				testutil.AssertEqual(t, result.Errors, 0, "Removal without replacement is not an error")
@@ -226,7 +226,7 @@ func TestStatsService_BulkDeactivateTeam(t *testing.T) {
 			tt.setupMocks(prRepo, userRepo)
 
 			logger := zap.NewNop()
-			svc := service.NewStatsService(prRepo, userRepo, logger)
+			svc := NewStatsService(prRepo, userRepo, logger)
 
 			// Act
 			result, err := svc.BulkDeactivateTeam(context.Background(), tt.teamName)
