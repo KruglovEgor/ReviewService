@@ -41,11 +41,20 @@ docker-compose ps
 go test -v ./internal/...
 ```
 
-**Integration-тесты:**
+**Integration-тесты (E2E):**
 ```bash
+# Запустить тесты в изолированной БД
 docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
+
+# Очистка после тестов
 docker-compose -f docker-compose.test.yml down -v
 ```
+
+Интеграционные тесты автоматически:
+- Создают чистую тестовую БД
+- Применяют миграции
+- Запускают все E2E сценарии
+- Работают на любой ОС без настройки
 
 ### Остановка
 
